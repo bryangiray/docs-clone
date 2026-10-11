@@ -28,7 +28,7 @@ brew services start postgresql@14
 ## Installation
 
 ```bash
-git clone <repository-url> docs-clone
+git clone git@github.com:bryangiray/docs-clone.git
 cd docs-clone
 npm install
 ```
@@ -91,13 +91,28 @@ DATABASE_URL=postgres://USER:PASSWORD@localhost:5432/docs_app_db
 
 `.env.local` is git-ignored. If the variable is missing, the app falls back to `postgres://localhost:5432/docs_app_db`, which works for a default Homebrew install where your macOS user owns the database.
 
-### 4. Create the first user
+### 4. Add users
 
-The database starts with no users, and sign-in needs an existing username. Add one in either of two ways.
+The database starts with no users, and sign-in needs an existing username. Load the starter users:
 
-From the admin page, after starting the app (next section): open <http://localhost:3000/admin> and fill in **Add a user**.
+```bash
+psql -d docs_app_db -f db/seed.sql
+```
 
-Or with SQL:
+This adds six accounts. Sign in with any of the usernames; there are no passwords.
+
+| Username    | Display name  |
+| ----------- | ------------- |
+| `user1`     | Bryan Giray   |
+| `user2`     | Bob Giray     |
+| `user3`     | Charlie Giray |
+| `newuser`   | NewUser       |
+| `user2test` | user2         |
+| `testuser`  | TestUser      |
+
+The seed is safe to re-run: usernames that already exist are left alone. It contains users only, no documents.
+
+To add your own users instead, or as well, use the admin page after starting the app (next section): open <http://localhost:3000/admin> and fill in **Add a user**. Or use SQL:
 
 ```bash
 psql -d docs_app_db -c "INSERT INTO users (username, display_name) VALUES ('alice', 'Alice Example');"
@@ -111,16 +126,16 @@ Usernames are 2–50 characters, lowercase letters, numbers, dot, dash or unders
 npm run dev
 ```
 
-Open <http://localhost:3000>, sign in with the username you created, and you land on the dashboard.
+Open <http://localhost:3000>, sign in with one of the usernames from step 4 (for example `user1`), and you land on the dashboard. If port 3000 is already in use, Next.js picks the next free port and prints the address in the terminal.
 
-| Command         | What it does                         |
-| --------------- | ------------------------------------ |
-| `npm run dev`   | Development server with hot reload   |
-| `npm run build` | Production build                     |
-| `npm run start` | Serve the production build           |
-| `npm run lint`  | ESLint                               |
-| `npm run test`  | Unit tests, run once (Vitest)        |
-| `npm run test:watch` | Unit tests, re-run on change    |
+| Command              | What it does                       |
+| -------------------- | ---------------------------------- |
+| `npm run dev`        | Development server with hot reload |
+| `npm run build`      | Production build                   |
+| `npm run start`      | Serve the production build         |
+| `npm run lint`       | ESLint                             |
+| `npm run test`       | Unit tests, run once (Vitest)      |
+| `npm run test:watch` | Unit tests, re-run on change       |
 
 The tests live next to the code they cover as `*.test.ts`. They do not need the database or a running server: the repositories are replaced with mocks.
 
@@ -156,7 +171,7 @@ This project is a demo and is not ready to be exposed to the internet as is:
 
 **`role "..." does not exist` or `password authentication failed`** — the default connection string uses your operating system user without a password. Put the right user and password in `DATABASE_URL`.
 
-**"No account found" on sign-in** — the user has not been created yet; see step 4.
+**"No account found" on sign-in** — that username is not in the database. Load the starter users or add your own; see step 4.
 
 **New styles do not show up in development** — restart `npm run dev`; edits to `app/globals.css` are not always picked up by a running dev server.
 
@@ -175,6 +190,7 @@ lib/auth/       Session cookie and permission checks
 lib/import/     Converters for uploaded files
 lib/export/     PDF export
 lib/storage/    Where uploaded originals are stored
-db/             SQL schema
+db/             SQL schema (schema.sql) and starter users (seed.sql)
+test/           Test support files; the tests themselves sit next to the code as *.test.ts
 proxy.ts        Redirects visitors without a session cookie to /sign-in
 ```
