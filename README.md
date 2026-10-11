@@ -153,12 +153,68 @@ The tests live next to the code they cover as `*.test.ts`. They do not need the 
 
 **Uploaded files.** The original copy of every imported file is written to `uploads/` in the project root. The folder is created on first upload and is git-ignored. Back it up together with the database, and make sure the process running the app can write to it.
 
+## Deployment (CI/CD)
+
+GitHub Actions runs [.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml):
+
+- **On every push and pull request:** install, lint, unit tests and a production build.
+- **On a push to `main`, if those pass:** deploy to `159.65.12.97`, where the app is served at <http://159.65.12.97:3001>.
+
+A deployment connects to the server over SSH, checks out the pushed commit and runs [deploy/deploy.sh](deploy/deploy.sh). That script installs dependencies, applies `db/schema.sql`, loads the starter users if there are none, builds, and restarts the app with pm2 (defined in [ecosystem.config.cjs](ecosystem.config.cjs)). If any step fails, the app is not restarted and the previous process keeps running. The workflow finishes by requesting the sign-in page to confirm the app answers.
+
+Until the two secrets below exist, the deploy job only prints a warning and the checks still run.
+
+### One-time server setup
+
+Run these on the server. The workflow assumes a user named `deploy` and the folder `/var/www/docs-clone`; to use others, set `DEPLOY_USER` and `DEPLOY_PATH` as repository variables or secrets.
+
+1. Install Node.js 20.9 or newer, PostgreSQL 14 or newer (with the `psql` client), git and pm2 (`npm install -g pm2`).
+2. Create a database user and a database for the app:
+
+   ```bash
+   sudo -u postgres psql -c "CREATE USER docs_app WITH PASSWORD 'choose-a-password';"
+   sudo -u postgres createdb -O docs_app docs_app_db
+   ```
+
+3. Create the deploy folder with the connection string in it:
+
+   ```bash
+   mkdir -p /var/www/docs-clone
+   echo 'DATABASE_URL=postgres://docs_app:choose-a-password@localhost:5432/docs_app_db' > /var/www/docs-clone/.env.local
+   ```
+
+4. Make sure port 3001 is reachable: `sudo ufw allow 3001` if ufw is active, and the same in any cloud firewall in front of the server.
+
+There is no need to clone the repository, create the tables or load the starter users by hand. The first deployment turns the folder into a checkout, applies `db/schema.sql`, and loads `db/seed.sql` because the users table is empty. Later deployments leave existing users alone.
+
+After the first successful deployment, run `pm2 startup` once and follow the command it prints, so the app starts again after a reboot.
+
+### One-time GitHub setup
+
+1. Create a key pair that is used only for deployments, with no passphrase:
+
+   ```bash
+   ssh-keygen -t ed25519 -f docs-clone-deploy -N "" -C "github-actions-deploy"
+   ```
+
+2. Add the public key (`docs-clone-deploy.pub`) to `~/.ssh/authorized_keys` of the deploy user on the server.
+3. In the repository on GitHub, under **Settings → Secrets and variables → Actions**, add two secrets:
+
+   | Secret               | Value                                             |
+   | -------------------- | ------------------------------------------------- |
+   | `DEPLOY_SSH_KEY`     | The whole private key file, `docs-clone-deploy`   |
+   | `DEPLOY_KNOWN_HOSTS` | The output of `ssh-keyscan -t ed25519 159.65.12.97` |
+
+4. Delete the local copy of the private key once it is stored as a secret.
+
+The next push to `main` deploys. To deploy by hand, run `bash deploy/deploy.sh` in the project folder on the server.
+
 ## Security notes
 
 This project is a demo and is not ready to be exposed to the internet as is:
 
 - Sign-in is by username only; there are no passwords.
-- `/admin` is open to anyone, signed in or not, and can add users and change upload settings.
+- `/admin` is open to anyone, signed in or not, and can add users and change upload settings. This applies to the deployed copy too.
 - The session cookie holds the plain user id and is not signed.
 
 ## Troubleshooting
@@ -191,6 +247,8 @@ lib/import/     Converters for uploaded files
 lib/export/     PDF export
 lib/storage/    Where uploaded originals are stored
 db/             SQL schema (schema.sql) and starter users (seed.sql)
+deploy/         Script that the CI/CD workflow runs on the server
+.github/        GitHub Actions workflow: checks on every push, deploy on main
 test/           Test support files; the tests themselves sit next to the code as *.test.ts
 proxy.ts        Redirects visitors without a session cookie to /sign-in
 ```

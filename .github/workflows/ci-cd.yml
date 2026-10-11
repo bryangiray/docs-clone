@@ -1,0 +1,92 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Where the app is deployed. The SSH user and the folder on the server can be
+# overridden with DEPLOY_USER and DEPLOY_PATH, set as repository variables or
+# secrets.
+env:
+  DEPLOY_HOST: 159.65.12.97
+  APP_PORT: 3001
+
+jobs:
+  check:
+    name: Lint, test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+      # Also type-checks. The build doesn't need a database.
+      - run: npm run build
+
+  deploy:
+    name: Deploy to the server
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # One deployment at a time; a newer push waits for the running one.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      DEPLOY_USER: ${{ vars.DEPLOY_USER || secrets.DEPLOY_USER || 'deploy' }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || secrets.DEPLOY_PATH || '/var/www/docs-clone' }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+    steps:
+      - name: Check that deployment is configured
+        id: config
+        run: |
+          if [ -z "$DEPLOY_SSH_KEY" ] || [ -z "$DEPLOY_KNOWN_HOSTS" ]; then
+            echo "::warning::Not deployed: add the DEPLOY_SSH_KEY and DEPLOY_KNOWN_HOSTS secrets (see README, Deployment)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up SSH
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # The server's host key is pinned, not trusted on first use.
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Update the code on the server and restart the app
+        if: steps.config.outputs.ready == 'true'
+        env:
+          REPO_URL: https://github.com/${{ github.repository }}.git
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            bash -s -- "$DEPLOY_PATH" "$REPO_URL" "$GITHUB_SHA" <<'REMOTE'
+          set -euo pipefail
+          mkdir -p "$1"
+          cd "$1"
+          # First deployment: make the folder a checkout. It may already hold
+          # .env.local, which a plain `git clone` would refuse to write next to.
+          if [ ! -d .git ]; then
+            git init --quiet --initial-branch=main
+            git remote add origin "$2"
+          fi
+          git fetch --quiet origin main
+          git reset --hard "$3"
+          bash deploy/deploy.sh </dev/null
+          REMOTE
+
+      - name: Check that the app answers
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          curl --fail --silent --show-error --output /dev/null \
+            --retry 10 --retry-delay 3 --retry-connrefused \
+            "http://$DEPLOY_HOST:$APP_PORT/sign-in"
