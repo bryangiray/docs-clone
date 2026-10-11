@@ -6,6 +6,7 @@ import { authorize } from "@/lib/auth/authorize";
 import { requireUser } from "@/lib/auth/session";
 import { UserError } from "@/lib/errors";
 import { importDocument } from "@/lib/services/document-import";
+import { listVersions } from "@/lib/repositories/versions";
 import * as documents from "@/lib/services/documents";
 
 export async function createDocument() {
@@ -41,7 +42,8 @@ export async function renameDocument(id: number, title: string) {
 
 export async function saveDocument(id: number, content: string) {
   const user = await authorize(id, "edit");
-  return { activity: await documents.saveContent(user, id, content) };
+  const activity = await documents.saveContent(user, id, content);
+  return { activity, versions: await listVersions(id) };
 }
 
 export async function recordView(id: number) {

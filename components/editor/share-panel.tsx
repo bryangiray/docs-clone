@@ -94,6 +94,7 @@ export function SharePanel({
               className="cursor-pointer rounded border border-gray-300 px-1 text-xs text-gray-800"
             >
               <option value="viewer">Viewer</option>
+              <option value="commenter">Commenter</option>
               <option value="editor">Editor</option>
             </select>
           </div>
@@ -152,6 +153,7 @@ export function SharePanel({
                 className="cursor-pointer rounded border border-gray-300 px-1 py-0.5 text-xs text-gray-800"
               >
                 <option value="viewer">Viewer</option>
+                <option value="commenter">Commenter</option>
                 <option value="editor">Editor</option>
                 <option value="none">Remove access</option>
               </select>

@@ -6,6 +6,7 @@ import {
 } from "@/lib/limits";
 import { listActivity, logActivity } from "@/lib/repositories/activity";
 import * as documents from "@/lib/repositories/documents";
+import { insertVersion, saveVersion } from "@/lib/repositories/versions";
 import { uploadStorage } from "@/lib/storage/uploads";
 import type { ActivityEntry, NewDocument, User } from "@/lib/types";
 
@@ -26,6 +27,8 @@ export async function createDocument(
 ): Promise<number> {
   const id = await documents.insertDocument(owner.id, doc);
   await logActivity(id, owner.id, "created");
+  // Keep what an imported document started with.
+  if (doc.content) await insertVersion(id, owner.id, doc.content);
   return id;
 }
 
@@ -50,6 +53,7 @@ export async function saveContent(
     throw new Error("Document is too large to save");
   }
   await documents.updateContent(id, content);
+  await saveVersion(id, actor.id, content);
   await logActivity(id, actor.id, "edited");
   return listActivity(id);
 }

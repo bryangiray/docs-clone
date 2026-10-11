@@ -4,12 +4,17 @@ export type User = {
   name: string;
 };
 
-export type Role = "owner" | "editor" | "viewer";
-export type ShareLevel = "editor" | "viewer";
+export type Role = "owner" | "editor" | "commenter" | "viewer";
+export type ShareLevel = "editor" | "commenter" | "viewer";
 
 export type Share = { userId: number; level: ShareLevel };
 
-export type ActivityAction = "created" | "viewed" | "edited" | "renamed";
+export type ActivityAction =
+  | "created"
+  | "viewed"
+  | "edited"
+  | "renamed"
+  | "restored";
 
 export type ActivityEntry = {
   id: number;
@@ -44,3 +49,28 @@ export type NewDocument = {
   originalFileName: string | null;
   filePath: string | null;
 };
+
+/** A thread's first comment has no `parentId`; replies point at it. */
+export type Comment = {
+  id: number;
+  userId: number;
+  parentId: number | null;
+  body: string;
+  /** The text the comment is about, and roughly where it sat in the document. */
+  quote: string | null;
+  quoteOffset: number | null;
+  resolved: boolean;
+  at: number;
+};
+
+export type NewComment = {
+  body: string;
+  quote?: string | null;
+  quoteOffset?: number | null;
+  parentId?: number | null;
+};
+
+/** Someone else who has the document open right now. */
+export type Presence = { userId: number; editing: boolean };
+
+export type VersionSummary = { id: number; userId: number; at: number };

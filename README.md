@@ -1,8 +1,14 @@
 # Docs Clone
 
-A small Google Docs–style editor: create rich-text documents, import `.docx`, `.md` and `.txt` files, share them with other users as editor or viewer, and see who did what in each document's activity log.
+A small Google Docs–style editor: create rich-text documents, import `.docx`, `.md` and `.txt` files, and share them with other users as editor, commenter or viewer.
 
-Built with Next.js 16 (App Router, Server Actions), React 19, Tiptap, Tailwind CSS 4 and PostgreSQL.
+- **Presence** — see who else has the document open and who is typing.
+- **Comments** — comment on selected text or on the whole document, reply, resolve and reopen threads.
+- **Version history** — look at earlier versions and restore one.
+- **PDF export** — download the document as a PDF.
+- **Activity log** — who created, viewed, edited, renamed or restored each document.
+
+Built with Next.js 16 (App Router, Server Actions), React 19, Tiptap, Tailwind CSS 4, pdfmake and PostgreSQL.
 
 ## Requirements
 
@@ -51,18 +57,23 @@ Check that it worked:
 psql -d docs_app_db -c '\dt'
 ```
 
-You should see six tables:
+You should see nine tables:
 
 | Table                  | Holds                                                                  |
 | ---------------------- | ---------------------------------------------------------------------- |
 | `users`                | Accounts: username and display name                                    |
 | `documents`            | Title, HTML content, owner, and the original file for imported uploads |
-| `document_shares`      | Who a document is shared with, as `editor` or `viewer`                 |
-| `document_activity`    | Log of created / viewed / edited / renamed events                      |
+| `document_shares`      | Who a document is shared with, as `editor`, `commenter` or `viewer`    |
+| `document_activity`    | Log of created / viewed / edited / renamed / restored events           |
+| `document_versions`    | Snapshots of each document's content, for version history              |
+| `document_comments`    | Comment threads and their replies                                      |
+| `document_presence`    | Who has each document open right now                                   |
 | `document_attachments` | Reserved for file attachments; not used by the app yet                 |
 | `global_settings`      | Key/value settings, such as the allowed upload extensions              |
 
-Deleting a user or a document cascades to its shares, activity and attachments.
+Deleting a user or a document cascades to its shares, activity, versions, comments and attachments.
+
+**Upgrading an existing database:** run the same `psql -d docs_app_db -f db/schema.sql` command again after pulling changes. It adds any tables that are missing and leaves existing data alone.
 
 ### 3. Point the app at the database
 
@@ -108,12 +119,22 @@ Open <http://localhost:3000>, sign in with the username you created, and you lan
 | `npm run build` | Production build                     |
 | `npm run start` | Serve the production build           |
 | `npm run lint`  | ESLint                               |
+| `npm run test`  | Unit tests, run once (Vitest)        |
+| `npm run test:watch` | Unit tests, re-run on change    |
+
+The tests live next to the code they cover as `*.test.ts`. They do not need the database or a running server: the repositories are replaced with mocks.
 
 ## Configuration
 
 **Upload extensions.** `/admin` has an **Allowed file extensions** field, stored in `global_settings` as `allowed_extensions` (for example `txt|docx|md`). Until it is saved for the first time the default is `txt`, `docx` and `md`. `.docx` and `.md` keep their formatting; any other allowed extension is imported as plain text.
 
 **Upload size.** Files are limited to 10 MB (`lib/limits.ts`). The Server Action body limit in `next.config.ts` is set to 11 MB to match; change both together.
+
+**Version history.** Every save is recorded. While one person keeps editing, their latest version is updated in place and a new one starts every 10 minutes, so autosave does not create a version per keystroke. Restoring adds the old content as a new version, so nothing is lost. Versions are kept indefinitely.
+
+**Presence and live comments.** Open editors send a heartbeat to `/api/documents/[id]/live` every 4 seconds while the tab is visible. Other people's avatars and new comments therefore appear within a few seconds, not instantly. Document text itself is not merged live: if two people edit at once, the last save wins.
+
+**PDF export.** The PDF is generated in the browser from the content on screen, including unsaved edits. It uses the Roboto font, which covers Latin, Cyrillic and Greek; other scripts will not render.
 
 **Uploaded files.** The original copy of every imported file is written to `uploads/` in the project root. The folder is created on first upload and is git-ignored. Back it up together with the database, and make sure the process running the app can write to it.
 
@@ -137,18 +158,22 @@ This project is a demo and is not ready to be exposed to the internet as is:
 
 **"No account found" on sign-in** — the user has not been created yet; see step 4.
 
+**New styles do not show up in development** — restart `npm run dev`; edits to `app/globals.css` are not always picked up by a running dev server.
+
 **Changes to `.env.local` are ignored** — restart `npm run dev`; environment files are read at startup.
 
 ## Project layout
 
 ```
 app/            Routes (sign-in, dashboard, d/[id] editor, admin) and Server Actions
+app/api/        Heartbeat endpoint for presence and live comments
 components/     Client components: editor, forms, menus
 lib/db/         PostgreSQL connection pool
 lib/repositories/  SQL queries, one file per table
 lib/services/   Business rules built on the repositories
 lib/auth/       Session cookie and permission checks
 lib/import/     Converters for uploaded files
+lib/export/     PDF export
 lib/storage/    Where uploaded originals are stored
 db/             SQL schema
 proxy.ts        Redirects visitors without a session cookie to /sign-in

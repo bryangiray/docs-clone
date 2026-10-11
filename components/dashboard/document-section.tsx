@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/avatar";
 import { Logo } from "@/components/logo";
 import { formatDateTime } from "@/lib/format";
+import { ACCESS_LABEL } from "@/lib/permissions";
 import type { DocumentSummary, User } from "@/lib/types";
 import { DeleteDocumentButton } from "./delete-document-button";
 
@@ -72,7 +73,7 @@ export function DocumentSection({
                     )}
                     {doc.role !== "owner" && (
                       <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                        {doc.role === "editor" ? "Can edit" : "View only"}
+                        {ACCESS_LABEL[doc.role]}
                       </span>
                     )}
                   </span>

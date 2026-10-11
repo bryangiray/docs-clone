@@ -7,9 +7,11 @@ import { Logo } from "@/components/logo";
 import { UserMenu, UserMenuFallback } from "@/components/auth/user-menu";
 import { requireUser } from "@/lib/auth/session";
 import { listActivity } from "@/lib/repositories/activity";
+import { listComments } from "@/lib/repositories/comments";
 import { findDocumentFor } from "@/lib/repositories/documents";
 import { listShares } from "@/lib/repositories/shares";
 import { listUsers } from "@/lib/repositories/users";
+import { listVersions } from "@/lib/repositories/versions";
 
 const MAX_ID = 2147483647;
 
@@ -63,10 +65,12 @@ async function DocumentLoader({
     );
   }
 
-  const [users, shares, activity] = await Promise.all([
+  const [users, shares, activity, comments, versions] = await Promise.all([
     listUsers(),
     listShares(doc.id),
     listActivity(doc.id),
+    listComments(doc.id),
+    listVersions(doc.id),
   ]);
 
   return (
@@ -84,6 +88,8 @@ async function DocumentLoader({
       users={users}
       initialShares={shares}
       initialActivity={activity}
+      initialComments={comments}
+      initialVersions={versions}
       currentUserId={user.id}
       userMenu={<UserMenu />}
     />

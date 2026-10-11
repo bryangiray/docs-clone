@@ -114,3 +114,20 @@ body {
   border-top: 1px solid #dadce0;
   margin: 1.2em 0;
 }
+
+/* Text that an open comment is about. */
+.doc-content .comment-highlight {
+  background: #fef3c7;
+  border-bottom: 2px solid #fbbf24;
+  cursor: pointer;
+}
+
+.doc-content .comment-highlight.is-active {
+  background: #fde68a;
+  border-bottom-color: #d97706;
+}
+
+/* The version preview is as tall as its content, not a full page. */
+[role="dialog"] .doc-content {
+  min-height: 0;
+}

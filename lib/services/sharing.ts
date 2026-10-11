@@ -3,7 +3,11 @@ import { deleteShare, listShares, upsertShare } from "@/lib/repositories/shares"
 import { findUserById } from "@/lib/repositories/users";
 import type { Share, ShareLevel, User } from "@/lib/types";
 
-const LEVELS: readonly string[] = ["editor", "viewer"] satisfies ShareLevel[];
+const LEVELS: readonly string[] = [
+  "editor",
+  "commenter",
+  "viewer",
+] satisfies ShareLevel[];
 
 /** Grants, changes or (with "none") removes one user's access. */
 export async function setShare(

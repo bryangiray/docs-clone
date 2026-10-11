@@ -7,6 +7,7 @@ const ACTION_LABEL: Record<ActivityEntry["action"], string> = {
   viewed: "viewed",
   edited: "edited",
   renamed: "renamed the document",
+  restored: "restored an earlier version",
 };
 
 export function ActivityPanel({
