@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { AddUserForm } from "@/components/add-user-form";
+import { AddUserForm } from "@/components/admin/add-user-form";
 import { Avatar } from "@/components/avatar";
 import { Logo } from "@/components/logo";
-import { ExtensionsForm } from "@/components/extensions-form";
-import { getAllowedExtensions, listUsers } from "@/lib/db";
+import { ExtensionsForm } from "@/components/admin/extensions-form";
+import { listUsers } from "@/lib/repositories/users";
+import { getAllowedExtensions } from "@/lib/services/settings";
 
 export const metadata: Metadata = { title: "Admin - Docs" };
 

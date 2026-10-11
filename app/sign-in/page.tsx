@@ -3,8 +3,8 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { Logo } from "@/components/logo";
-import { SignInForm } from "@/components/sign-in-form";
-import { listUsers } from "@/lib/db";
+import { SignInForm } from "@/components/auth/sign-in-form";
+import { listUsers } from "@/lib/repositories/users";
 
 export const metadata: Metadata = { title: "Sign in - Docs" };
 

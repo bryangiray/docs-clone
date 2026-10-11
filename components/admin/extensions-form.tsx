@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { updateAllowedExtensions } from "@/app/actions";
-import type { ExtensionsState } from "@/app/actions";
+import { updateAllowedExtensions } from "@/app/actions/admin";
+import type { ExtensionsState } from "@/app/actions/admin";
 
 const INITIAL_STATE: ExtensionsState = {};
 

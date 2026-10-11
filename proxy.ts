@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Keep in sync with SESSION_COOKIE in lib/session.ts.
-const SESSION_COOKIE = "docs_session";
+import { SESSION_COOKIE } from "@/lib/auth/session-cookie";
 
 // Fast redirect for visitors with no session cookie. Pages and Server Actions
 // still verify the session against the database themselves.

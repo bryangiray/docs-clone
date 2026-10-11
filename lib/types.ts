@@ -2,7 +2,6 @@ export type User = {
   id: number;
   username: string;
   name: string;
-  color: string;
 };
 
 export type Role = "owner" | "editor" | "viewer";
@@ -32,4 +31,16 @@ export type DocumentSummary = {
   role: Role;
 };
 
-export type DocumentRecord = DocumentSummary & { content: string };
+/** A document as seen by one user; `role` is null when they have no access. */
+export type DocumentForUser = Omit<DocumentSummary, "role"> & {
+  role: Role | null;
+  content: string;
+};
+
+export type NewDocument = {
+  title: string;
+  content: string;
+  docType: DocType;
+  originalFileName: string | null;
+  filePath: string | null;
+};

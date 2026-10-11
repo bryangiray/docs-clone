@@ -1,5 +1,14 @@
 import type { User } from "@/lib/types";
 
+const COLORS = [
+  "#1a73e8",
+  "#d93025",
+  "#188038",
+  "#e37400",
+  "#9334e6",
+  "#00796b",
+];
+
 function initials(name: string): string {
   return name
     .split(/\s+/)
@@ -14,7 +23,7 @@ export function Avatar({ user, size = 32 }: { user: User; size?: number }) {
       aria-hidden
       className="inline-flex shrink-0 items-center justify-center rounded-full font-medium text-white"
       style={{
-        backgroundColor: user.color,
+        backgroundColor: COLORS[(user.id - 1) % COLORS.length],
         width: size,
         height: size,
         fontSize: size * 0.4,

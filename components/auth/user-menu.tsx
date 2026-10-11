@@ -1,6 +1,6 @@
-import { signOut } from "@/app/actions";
-import { getCurrentUser } from "@/lib/session";
-import { Avatar } from "./avatar";
+import { signOut } from "@/app/actions/auth";
+import { getCurrentUser } from "@/lib/auth/session";
+import { Avatar } from "@/components/avatar";
 
 export async function UserMenu() {
   const user = await getCurrentUser();

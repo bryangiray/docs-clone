@@ -1,11 +1,11 @@
 "use client";
 
 import { startTransition, useActionState, useRef } from "react";
-import { uploadDocument } from "@/app/actions";
-import type { UploadState } from "@/app/actions";
+import { uploadDocument } from "@/app/actions/documents";
+import type { UploadState } from "@/app/actions/documents";
+import { MAX_UPLOAD_BYTES } from "@/lib/limits";
 
 const INITIAL_STATE: UploadState = {};
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 export function UploadButton({ extensions }: { extensions: string[] }) {
   const accepted = extensions.map((extension) => `.${extension}`);

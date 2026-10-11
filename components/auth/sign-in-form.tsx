@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import { signIn } from "@/app/actions";
-import type { SignInState } from "@/app/actions";
+import { signIn } from "@/app/actions/auth";
+import type { SignInState } from "@/app/actions/auth";
 import type { User } from "@/lib/types";
-import { Avatar } from "./avatar";
+import { Avatar } from "@/components/avatar";
 
 const INITIAL_STATE: SignInState = {};
 

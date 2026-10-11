@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { deleteDocument } from "@/app/actions";
+import { deleteDocument } from "@/app/actions/documents";
 
 export function DeleteDocumentButton({
   id,

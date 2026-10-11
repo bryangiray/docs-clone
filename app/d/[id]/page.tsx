@@ -2,11 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { DocumentEditor } from "@/components/document-editor";
+import { DocumentEditor } from "@/components/editor/document-editor";
 import { Logo } from "@/components/logo";
-import { UserMenu, UserMenuFallback } from "@/components/user-menu";
-import { getDocumentFor, listActivity, listShares, listUsers } from "@/lib/db";
-import { requireUser } from "@/lib/session";
+import { UserMenu, UserMenuFallback } from "@/components/auth/user-menu";
+import { requireUser } from "@/lib/auth/session";
+import { listActivity } from "@/lib/repositories/activity";
+import { findDocumentFor } from "@/lib/repositories/documents";
+import { listShares } from "@/lib/repositories/shares";
+import { listUsers } from "@/lib/repositories/users";
 
 const MAX_ID = 2147483647;
 
@@ -29,7 +32,7 @@ async function DocumentLoader({
 
   // Always read the document at request time, never from a prefetched shell.
   await connection();
-  const doc = await getDocumentFor(docId, user.id);
+  const doc = await findDocumentFor(docId, user.id);
   if (!doc) notFound();
 
   if (!doc.role) {

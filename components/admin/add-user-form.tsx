@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { addUser } from "@/app/actions";
-import type { AddUserState } from "@/app/actions";
+import { addUser } from "@/app/actions/admin";
+import type { AddUserState } from "@/app/actions/admin";
 
 const INITIAL_STATE: AddUserState = {};
 
